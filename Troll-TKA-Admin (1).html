@@ -1,0 +1,193 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Troll TKA — Admin</title>
+<style>
+:root{--bg:#0f1220;--card:#181c30;--line:#2a2f4d;--tx:#eef0ff;--mut:#9aa0c4;--ac:#ff3b6b;--ok:#2ecc8f;--bad:#ff6b6b}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:16px 16px 60px;max-width:560px;margin:0 auto}
+h1{font-size:22px;margin:8px 0 2px}h2{font-size:16px;margin:0 0 10px}p.s{color:var(--mut);margin:0 0 16px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input[type=text],input[type=password],input[type=number],select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#10132400;background:#0e1121;color:var(--tx);font:inherit}
+input[type=file]{width:100%;color:var(--mut);font-size:13px}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 16px;background:var(--ac);color:#fff;cursor:pointer;width:100%;margin-top:12px}
+button.g{background:#2a2f4d}button.sm{width:auto;padding:6px 12px;margin:0;font-size:12px;border-radius:8px}button:disabled{opacity:.5}
+.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}.chk{display:flex;gap:8px;align-items:center;margin-top:10px;color:var(--tx);font-size:14px}.chk input{width:18px;height:18px}
+.msg{margin-top:10px;font-size:13px;min-height:18px}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.tg{background:#0e1121;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tg.on{border-color:var(--ok)}.tg b{display:block}.tg small{color:var(--mut)}
+#pv{margin-top:10px;max-height:200px;border-radius:10px;max-width:100%;display:none;background:#000}
+.bar{height:8px;border-radius:9px;background:#2a2f4d;overflow:hidden;margin-top:10px;display:none}.bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+.h{border-top:1px solid var(--line);padding:10px 0;display:flex;justify-content:space-between;gap:8px;align-items:center}.h:first-child{border-top:0}.h small{color:var(--mut);display:block}
+[hidden]{display:none!important}
+</style></head><body>
+<h1>😜 Troll TKA</h1><p class="s">Aplikasi admin untuk mengirim troll ke layar siswa yang sedang ujian. Firebase sama dengan aplikasi ujian.</p>
+
+<section class="card" id="vLogin">
+  <h2>Masuk Admin</h2>
+  <label for="lu">Email atau nama pengguna</label><input type="text" id="lu" autocomplete="username" autocapitalize="none" spellcheck="false">
+  <label for="lp">Password</label><input type="password" id="lp" autocomplete="current-password">
+  <button id="bLogin">Masuk</button><div class="msg" id="mLogin"></div>
+</section>
+
+<div id="vMain" hidden>
+  <div class="card row"><div><b id="who"></b><br><small style="color:var(--mut)">Admin aplikasi</small></div><button class="g sm" id="bOut" style="flex:0 0 auto">Keluar</button></div>
+
+  <section class="card">
+    <h2>1. Target</h2>
+    <label for="tq">Email atau nama pengguna siswa</label>
+    <div class="row"><input type="text" id="tq" autocapitalize="none" spellcheck="false" placeholder="mis. budi.k6 atau budi@gmail.com" style="flex:3"><button class="sm" id="bFind" style="flex:1;margin:0">Cari</button></div>
+    <div id="tres"></div><div class="msg" id="mFind"></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Media troll</h2>
+    <label for="fm">Pilih gambar atau video dari file</label>
+    <input type="file" id="fm" accept="image/*,video/*">
+    <img id="pvi" alt="" style="display:none;margin-top:10px;max-height:200px;border-radius:10px;max-width:100%"><video id="pvv" controls playsinline style="display:none;margin-top:10px;max-height:200px;max-width:100%;border-radius:10px"></video>
+    <div class="msg" id="mFile"></div>
+    <label for="du">Durasi troll di layar siswa (detik, 3–120)</label><input type="number" id="du" min="3" max="120" value="15" inputmode="numeric">
+    <div id="sndImg" hidden>
+      <label for="sn">Suara</label>
+      <select id="sn"><option value="none">Tanpa suara</option><option value="bel">Bel kereta (bawaan)</option><option value="file">Pilih file suara…</option></select>
+      <div id="fa" hidden><label for="fau">File suara (maks. 1 MB)</label><input type="file" id="fau" accept="audio/*"></div>
+    </div>
+    <div id="sndVid" hidden><label class="chk"><input type="checkbox" id="vs" checked> Bunyikan suara video</label></div>
+  </section>
+
+  <section class="card">
+    <button id="bSend">🚀 Kirim Troll</button>
+    <div class="bar" id="bar"><i id="barI"></i></div><div class="msg" id="mSend"></div>
+  </section>
+
+  <section class="card"><h2>Riwayat troll</h2><div id="hist"><small style="color:var(--mut)">Belum ada.</small></div></section>
+</div>
+
+<script type="module">
+const FIREBASE_CONFIG={
+  apiKey:'AIzaSyBH4cWRo8Evn4FBcAP0rMCV_ncBTT4A0BI',
+  authDomain:'tkasdn17.firebaseapp.com',
+  projectId:'tkasdn17',
+  storageBucket:'tkasdn17.firebasestorage.app',
+  messagingSenderId:'262700514550',
+  appId:'1:262700514550:web:b25db32cb48c69a1ecc0d7'
+};
+const ADMIN_EMAIL='kepalabuah10@gmail.com';
+const FB_VER='13.2.0',EMAIL_DOMAIN='tka-sdn17.app';
+const B='https://www.gstatic.com/firebasejs/'+FB_VER+'/';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const say=(id,t,c)=>{const e=$(id);e.textContent=t||'';e.className='msg '+(c||'')};
+let A,Fs,auth,db,me=null,target=null,media=null,audio=null,hUn=null;
+try{
+  const [a,au,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+  const app=a.initializeApp(FIREBASE_CONFIG);auth=au.getAuth(app);A=au;Fs=fs;db=fs.initializeFirestore(app,{experimentalAutoDetectLongPolling:true});
+}catch(e){say('#mLogin','Gagal memuat Firebase. Buka lewat https dan cek koneksi internet.','bad')}
+const dref=p=>Fs.doc(db,...p.split('/'));
+const toEmail=u=>{u=u.trim().toLowerCase();return u.includes('@')?u:u+'@'+EMAIL_DOMAIN};
+const errTxt=e=>{const c=e&&e.code;if(c==='permission-denied')return 'Ditolak aturan keamanan. Pastikan firestore.rules terbaru sudah di-Publish dan akun yang login adalah kepalabuah10@gmail.com.';
+ if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-email')return 'Email/nama pengguna atau password salah.';
+ if(c==='auth/too-many-requests')return 'Terlalu banyak percobaan. Tunggu sebentar.';return 'Gagal: '+(c||e&&e.message||e)};
+
+$('#bLogin').onclick=async()=>{
+  const u=$('#lu').value,p=$('#lp').value;if(!u||!p){say('#mLogin','Isi email/nama pengguna dan password.','bad');return}
+  $('#bLogin').disabled=true;say('#mLogin','Masuk…');
+  try{await A.signInWithEmailAndPassword(auth,toEmail(u),p)}catch(e){say('#mLogin',errTxt(e),'bad')}
+  $('#bLogin').disabled=false;
+};
+$('#lp').addEventListener('keydown',e=>{if(e.key==='Enter')$('#bLogin').click()});
+$('#bOut').onclick=()=>A.signOut(auth);
+if(auth)A.onAuthStateChanged(auth,async u=>{
+  if(hUn){hUn();hUn=null}
+  if(!u){me=null;$('#vMain').hidden=true;$('#vLogin').hidden=false;return}
+  const ok=String(u.email||'').toLowerCase()===ADMIN_EMAIL;
+  if(!ok){say('#mLogin','Akun ini bukan admin aplikasi. Hanya '+ADMIN_EMAIL+' yang boleh masuk.','bad');await A.signOut(auth);return}
+  me={uid:u.uid,name:(u.email||'').split('@')[0]};
+  try{const d=await Fs.getDoc(dref('users/'+u.uid));if(d.exists())me.name=d.data().name||me.name}catch(e){}
+  $('#who').textContent=me.name;$('#vLogin').hidden=true;$('#vMain').hidden=false;say('#mLogin','');watchHist();
+});
+
+// ---- cari target
+$('#bFind').onclick=find;$('#tq').addEventListener('keydown',e=>{if(e.key==='Enter')find()});
+async function find(){
+  const q=$('#tq').value.trim().toLowerCase();target=null;$('#tres').innerHTML='';
+  if(!q){say('#mFind','Ketik email atau nama pengguna.','bad');return}
+  say('#mFind','Mencari…');
+  try{
+    const col=Fs.collection(db,'users');let docs=[];
+    const s1=await Fs.getDocs(Fs.query(col,Fs.where('em','==',q),Fs.limit(5)));docs=s1.docs;
+    if(!docs.length){const un=q.split('@')[0];const s2=await Fs.getDocs(Fs.query(col,Fs.where('un','==',un),Fs.limit(5)));docs=s2.docs}
+    if(!docs.length){say('#mFind','Tidak ditemukan. Siswa harus sudah mendaftar. Akun lama tanpa email: cari dengan nama pengguna.','bad');return}
+    say('#mFind',docs.length+' akun ditemukan. Ketuk untuk memilih.','ok');
+    $('#tres').innerHTML=docs.map(d=>{const x=d.data();return '<div class="tg" data-id="'+esc(d.id)+'" data-un="'+esc(x.un)+'" data-nm="'+esc(x.name)+'"><div><b>'+esc(x.name)+'</b><small>@'+esc(x.un)+(x.em?' · '+esc(x.em):'')+'</small></div><button class="sm g">Pilih</button></div>'}).join('');
+    $('#tres').querySelectorAll('.tg').forEach(el=>el.onclick=()=>{
+      target={id:el.dataset.id,un:el.dataset.un,name:el.dataset.nm};
+      $('#tres').querySelectorAll('.tg').forEach(x=>x.classList.toggle('on',x===el));say('#mFind','Target: '+target.name+' (@'+target.un+')','ok')});
+    if(docs.length===1)$('#tres').firstChild.click();
+  }catch(e){say('#mFind',errTxt(e),'bad')}
+}
+
+// ---- file
+const MB=1024*1024,CH=500*1024;
+$('#fm').onchange=async ev=>{
+  media=null;const f=ev.target.files[0];
+  ['#pvi','#pvv'].forEach(s=>{$(s).style.display='none'});$('#pvv').removeAttribute('src');$('#sndImg').hidden=true;$('#sndVid').hidden=true;say('#mFile','');
+  if(!f)return;
+  if(f.type.startsWith('image/')){
+    try{
+      let blob=f;
+      if(f.type!=='image/gif'){blob=await shrink(f)}
+      if(blob.size>3*MB){say('#mFile','Gambar terlalu besar (maks. 3 MB setelah dikecilkan). Pilih gambar lain.','bad');return}
+      media={kind:'image',blob,mime:blob.type||'image/jpeg'};$('#pvi').src=URL.createObjectURL(blob);$('#pvi').style.display='block';$('#sndImg').hidden=false;
+      say('#mFile','Gambar siap ('+(blob.size/1024).toFixed(0)+' KB).','ok');
+    }catch(e){say('#mFile','Gambar tidak bisa dibaca.','bad')}
+  }else if(f.type.startsWith('video/')){
+    if(f.size>3*MB){say('#mFile','Video terlalu besar ('+(f.size/MB).toFixed(1)+' MB). Maksimal 3 MB (sekitar 5–10 detik). Potong/kompres dulu.','bad');return}
+    media={kind:'video',blob:f,mime:f.type};$('#pvv').src=URL.createObjectURL(f);$('#pvv').style.display='block';$('#sndVid').hidden=false;
+    say('#mFile','Video siap ('+(f.size/1024).toFixed(0)+' KB). Video diulang otomatis selama durasi troll.','ok');
+  }else say('#mFile','Pilih file gambar atau video.','bad');
+};
+function shrink(f){return new Promise((ok,no)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{
+  const m=1280,r=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);
+  c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?ok(b):no(new Error('x')),'image/jpeg',.72)};im.onerror=no;im.src=u})}
+$('#sn').onchange=()=>{$('#fa').hidden=$('#sn').value!=='file'};
+$('#fau').onchange=e=>{audio=null;const f=e.target.files[0];if(!f)return;if(f.size>MB){say('#mSend','File suara terlalu besar (maks. 1 MB).','bad');e.target.value='';return}audio={blob:f,mime:f.type||'audio/mpeg'};say('#mSend','')};
+
+// ---- kirim
+const b64=async blob=>{const buf=new Uint8Array(await blob.arrayBuffer());let s='';for(let i=0;i<buf.length;i+=0x8000)s+=String.fromCharCode.apply(null,buf.subarray(i,i+0x8000));return btoa(s)};
+async function parts(id,k,blob,prog){
+  const n=Math.ceil(blob.size/CH);
+  for(let i=0;i<n;i++){await Fs.setDoc(dref('trolls/'+id+'/parts/'+k+i),{k,i,d:await b64(blob.slice(i*CH,(i+1)*CH))});prog()}
+  return n;
+}
+$('#bSend').onclick=async()=>{
+  if(!me)return;
+  if(!target){say('#mSend','Pilih target dulu (langkah 1).','bad');return}
+  if(!media){say('#mSend','Pilih gambar atau video dulu (langkah 2).','bad');return}
+  const dur=Math.round(Number($('#du').value));if(!(dur>=3&&dur<=120)){say('#mSend','Durasi harus 3–120 detik.','bad');return}
+  let snd='none';if(media.kind==='image'){snd=$('#sn').value;if(snd==='file'&&!audio){say('#mSend','Pilih file suaranya dulu.','bad');return}}
+  if(!confirm('Kirim troll ke '+target.name+' (@'+target.un+') selama '+dur+' detik?'))return;
+  const id=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2)).replace(/-/g,'').slice(0,20);
+  const total=Math.ceil(media.blob.size/CH)+(snd==='file'?Math.ceil(audio.blob.size/CH):0);let done=0;
+  const bar=$('#bar'),bi=$('#barI');bar.style.display='block';bi.style.width='0';$('#bSend').disabled=true;say('#mSend','Mengunggah…');
+  const prog=()=>{done++;bi.style.width=(done/total*100)+'%'};
+  try{
+    const nm=await parts(id,'m',media.blob,prog);let na=0;
+    if(snd==='file')na=await parts(id,'a',audio.blob,prog);
+    await Fs.setDoc(dref('trolls/'+id),{to:target.id,toUn:target.un,toName:target.name,from:me.uid,fromName:me.name,kind:media.kind,mime:media.mime,amime:snd==='file'?audio.mime:'',snd,vmute:media.kind==='video'?!$('#vs').checked:false,dur,ts:Date.now(),nm,na});
+    say('#mSend','Terkirim ke '+target.name+'. Troll tampil di layarnya begitu aplikasinya terbuka/terhubung.','ok');
+  }catch(e){say('#mSend',errTxt(e),'bad');try{await purge(id)}catch(_){}}
+  $('#bSend').disabled=false;setTimeout(()=>{bar.style.display='none'},1500);
+};
+async function purge(id){
+  const ps=await Fs.getDocs(Fs.collection(db,'trolls',id,'parts'));
+  for(const d of ps.docs)await Fs.deleteDoc(d.ref);
+  await Fs.deleteDoc(dref('trolls/'+id));
+}
+
+// ---- riwayat
+function watchHist(){
+  hUn=Fs.onSnapshot(Fs.query(Fs.collection(db,'trolls'),Fs.where('from','==',me.uid),Fs.limit(50)),sn=>{
+    const a=sn.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>y.ts-x.ts);
+    $('#hist').innerHTML=a.length?a.map(t=>'<div class="h"><div><b>'+esc(t.toName)+' <span style="font-weight:400;color:var(--mut)">@'+esc(t.toUn)+'</span></b><small>'+(t.kind==='video'?'Video':'Gambar')+' · '+t.dur+' dtk · '+new Date(t.ts).toLocaleString('id-ID')+'</small><small class="'+(t.shownAt?'ok':'')+'">'+(t.shownAt?'✔ Tampil '+new Date(t.shownAt).toLocaleTimeString('id-ID'):'⏳ Menunggu ditampilkan')+'</small></div><button class="sm g" data-d="'+esc(t.id)+'">Hapus</button></div>').join(''):'<small style="color:var(--mut)">Belum ada.</small>';
+    $('#hist').querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('Hapus troll ini?')){b.disabled=true;try{await purge(b.dataset.d)}catch(e){alert(errTxt(e))}}});
+  },e=>say('#mSend',errTxt(e),'bad'));
+}
+</script></body></html>
